@@ -1,8 +1,9 @@
-const w = 39;
-const h = 30;
+const extent_w = 200;
+const extent_h = 200;
+
 const thickness = 10;
 
-const pin_tolerance = 0.5;
+const pin_tolerance = 0.4;
 const pin_d = 7;
 const hole_d = pin_d + pin_tolerance;
 const pin_h = thickness+6;
@@ -14,17 +15,25 @@ const cap_h = 2;
 
 
 //Horizontal spacing is the diameter as it's the width of the encompassing circle of the hexagon
-const hole_spacing_horizontal = 3/2 * (cap_d/2)*2 + gap;
+const hole_spacing_horizontal = (3/2 * cap_d) / 2  + gap;
 
 //Vertical spacing is the height of the hexagon that is fitting inside the circle
-const hole_spacing_vertical = (Math.sqrt(3) * cap_d/2)/2 + gap/2;
+const hole_spacing_vertical = (Math.sqrt(3) * cap_d/2) + gap;
 
+//Make actual width and height multiples in multiples
+let border = 10;
+const w = Math.floor((extent_w-border) / hole_spacing_horizontal) * hole_spacing_horizontal;
+const h = Math.floor((extent_h-border) / hole_spacing_vertical) * hole_spacing_vertical;
 
 const { primitives, booleans } = jscad;
 
 
 function board() {
-  const cube = Manifold.cube([w, h, 10], true).translate([w/2,h/2,thickness/2])
+  let cube_w = w+border, cube_h = h+border+hole_spacing_vertical;
+  const cube = Manifold.cube([cube_w, cube_h, 10], true)
+    .translate([w/2 - hole_spacing_horizontal/2,
+                h/2 + hole_spacing_vertical/4,
+                thickness/2])
   return cube;
 }
 
@@ -54,9 +63,10 @@ function pin(pin_d, pin_h) {
 function makeHolesAndPins() {
   let holes = [];
   let pins = [];
-  for (let i = 7; i < w-6; i += hole_spacing_horizontal) {
-    for (let j = 6; j < h-5; j += hole_spacing_vertical) {
-      let alternate = (Math.round((j/hole_spacing_vertical)) % 2) //1 every other row
+  for (let i = 0; i < w; i += hole_spacing_horizontal) {
+      let alternate = (Math.round((i/(hole_spacing_horizontal))) % 2) //1 every other row
+      console.log(alternate)
+    for (let j = 0; j < h; j += hole_spacing_vertical) {
       holes.push( 
         // Manifold.cylinder(
         //   thickness+5,
@@ -66,14 +76,12 @@ function makeHolesAndPins() {
         //   true)
         pin(pin_d + pin_tolerance*2, thickness)
           .translate(
-          [i + (alternate * hole_spacing_horizontal/2), j, 0]
-        )
-        
+          [i , j + (alternate * hole_spacing_vertical/2),0])
       )
       console.log((j/hole_spacing_vertical), alternate)
       pins.push(
         pin(pin_d, pin_h).translate(
-          [i + (alternate * hole_spacing_horizontal/2), j,0])
+          [i , j + (alternate * hole_spacing_vertical/2),0])
       )      
     }
   }
